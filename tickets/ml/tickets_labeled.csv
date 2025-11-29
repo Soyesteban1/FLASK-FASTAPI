@@ -1,0 +1,21 @@
+text,category
+No puedo iniciar sesión en mi cuenta,login
+Olvidé mi contraseña y no me deja recuperarla,login
+El sistema no me reconoce aunque las credenciales estén correctas,login
+Servidor caído desde hace una hora,server
+El backend responde con error 500 constantemente,server
+El servidor está extremadamente lento hoy,server
+Problemas de conexión a la red interna,network
+La VPN se desconecta cada pocos minutos,network
+Perdemos paquetes al intentar conectarnos al sistema,network
+La aplicación no carga en el navegador,app
+Pantalla en blanco al abrir la app móvil,app
+La interfaz se congela cuando envío un formulario,app
+Me están cobrando doble en mi tarjeta,billing
+No aparece mi factura mensual en el sistema,billing
+Mi suscripción dice que está vencida pero ya pagué,billing
+Recibí un correo sospechoso pidiendo mis credenciales,security
+Detectamos actividad inusual en nuestra cuenta,security
+Creo que hay un intento de phishing dirigido a nuestro equipo,security
+El sistema muestra un error desconocido,other
+No sé qué pasa, pero nada funciona,other

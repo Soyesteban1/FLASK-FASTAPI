@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Support AI Dashboard</title>
+<style>
+body { margin: 0; font-family: Arial, sans-serif; background: #f3f4f6; display: flex; height: 100vh; }
+.sidebar { width: 230px; background: #1f2937; color: white; padding: 20px; }
+.sidebar h2 { color: #93c5fd; }
+.sidebar button { width: 100%; padding: 10px; margin-top: 10px; background: #2563eb; border: none; color: white; cursor: pointer; border-radius: 6px; }
+.main { flex: 1; padding: 25px; overflow-y: auto; }
+h1 { margin-top: 0; color: #111827; }
+.card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+input, select { width: 100%; padding: 8px; margin-top: 5px; margin-bottom: 10px; border: 1px solid #d1d5db; border-radius: 6px; }
+button.primary { background: #2563eb; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; width: 100%; }
+table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+th { background: #2563eb; color: white; padding: 8px; }
+td { padding: 8px; border-bottom: 1px solid #e5e7eb; }
+.alert-high { color: red; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>Support AI</h2>
+    <button onclick="loadCustomers()">Ver Clientes</button>
+    <button onclick="loadTickets()">Ver Tickets</button>
+    <button onclick="loadAlerts()">Ver Alertas</button>
+    <br><br>
+    <button onclick="showSection('addCustomer')">➕ Nuevo Cliente</button>
+    <button onclick="showSection('addTicket')">➕ Nuevo Ticket</button>
+    <button onclick="showSection('addAlert')">➕ Nueva Alerta</button>
+</div>
+
+<div class="main">
+<h1>Dashboard</h1>
+
+<!-- Clientes -->
+<div id="customers" class="card" style="display:none;">
+    <h2>Clientes</h2>
+    <table>
+        <thead><tr><th>ID</th><th>Nombre</th><th>Tickets Recientes</th><th>Churn</th></tr></thead>
+        <tbody id="customerTable"></tbody>
+    </table>
+</div>
+
+<!-- Tickets -->
+<div id="tickets" class="card" style="display:none;">
+    <h2>Tickets</h2>
+    <table>
+        <thead><tr><th>ID</th><th>Título</th><th>Categoría</th><th>Cliente</th><th>Prioridad</th></tr></thead>
+        <tbody id="ticketTable"></tbody>
+    </table>
+</div>
+
+<!-- Alertas -->
+<div id="alerts" class="card" style="display:none;">
+    <h2>Alertas generadas</h2>
+    <table>
+        <thead><tr><th>ID</th><th>Mensaje</th><th>Cliente</th><th>Tipo</th></tr></thead>
+        <tbody id="alertTable"></tbody>
+    </table>
+</div>
+
+<!-- Nuevo Cliente -->
+<div id="addCustomer" class="card" style="display:none;">
+    <h2>Crear Nuevo Cliente</h2>
+    <label>Nombre:</label>
+    <input id="customerName" type="text" placeholder="Nombre del cliente">
+    <button class="primary" onclick="createCustomer()">Crear Cliente</button>
+</div>
+
+<!-- Nuevo Ticket -->
+<div id="addTicket" class="card" style="display:none;">
+    <h2>Crear Ticket</h2>
+    <label>Título:</label>
+    <input id="ticketText" type="text">
+    <label>Descripción:</label>
+    <input id="ticketDescription" type="text" placeholder="Descripción del ticket">
+    <label>Categoría:</label>
+    <select id="ticketCategory">
+        <option value="login">Login</option>
+        <option value="server">Server</option>
+        <option value="network">Network</option>
+        <option value="app">App</option>
+        <option value="other">Other</option>
+    </select>
+    <label>Prioridad:</label>
+    <select id="ticketPriority">
+        <option value="low">Low</option>
+        <option value="medium">Medium</option>
+        <option value="high">High</option>
+    </select>
+    <label>ID Cliente:</label>
+    <input id="ticketCustomer" type="number">
+    <button class="primary" onclick="createTicket()">Crear Ticket</button>
+</div>
+
+<!-- Nueva Alerta -->
+<div id="addAlert" class="card" style="display:none;">
+    <h2>Crear Alerta</h2>
+    <label>Mensaje:</label>
+    <input id="alertMessage" type="text" placeholder="Mensaje de la alerta">
+    <label>ID Cliente:</label>
+    <input id="alertCustomer" type="number" placeholder="ID del cliente">
+    <label>Tipo:</label>
+    <select id="alertType">
+        <option value="info">Info</option>
+        <option value="warning">Warning</option>
+        <option value="critical">Critical</option>
+    </select>
+    <button class="primary" onclick="createAlert()">Crear Alerta</button>
+</div>
+
+</div>
+
+<script>
+function hideAll(){ document.querySelectorAll('.card').forEach(c=>c.style.display='none'); }
+function showSection(id){ hideAll(); document.getElementById(id).style.display='block'; }
+
+// Cargar Clientes
+async function loadCustomers(){
+    showSection('customers');
+    let res = await fetch("/api/customers/");
+    let data = await res.json();
+    let html = "";
+    data.forEach(c=>{
+        html+=`<tr>
+            <td>${c.id}</td>
+            <td>${c.name}</td>
+            <td>${c.recent_tickets || 0}</td>
+            <td class="${c.churn_risk*100>=50?'alert-high':''}">${Math.round(c.churn_risk*100)}%</td>
+        </tr>`;
+    });
+    document.getElementById("customerTable").innerHTML = html;
+}
+
+// Cargar Tickets
+async function loadTickets(){
+    showSection('tickets');
+    let res = await fetch("/api/tickets/");
+    let data = await res.json();
+    let html = "";
+    data.forEach(t=>{
+        html+=`<tr>
+            <td>${t.id}</td>
+            <td>${t.title}</td>
+            <td>${t.category}</td>
+            <td>${t.customer.id}</td>
+            <td>${t.priority}</td>
+        </tr>`;
+    });
+    document.getElementById("ticketTable").innerHTML = html;
+}
+
+// Cargar Alertas
+async function loadAlerts(){
+    showSection('alerts');
+    let res = await fetch("/api/alerts/");
+    let data = await res.json();
+    let html = "";
+    data.forEach(a=>{
+        html+=`<tr>
+            <td>${a.id}</td>
+            <td>${a.message}</td>
+            <td>${a.ticket.customer.id}</td>
+            <td>${a.level}</td>
+        </tr>`;
+    });
+    document.getElementById("alertTable").innerHTML = html;
+}
+
+// Crear Cliente
+async function createCustomer(){
+    let name=document.getElementById("customerName").value;
+    if(!name) return alert("Escribe el nombre");
+    let res=await fetch("/api/customers/",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name})});
+    if(res.ok) loadCustomers(); else alert(await res.text());
+}
+
+// Crear Ticket
+async function createTicket(){
+    let title=document.getElementById("ticketText").value;
+    let description=document.getElementById("ticketDescription").value || "Sin descripción";
+    let category=document.getElementById("ticketCategory").value;
+    let priority=document.getElementById("ticketPriority").value;
+    let customer_id=parseInt(document.getElementById("ticketCustomer").value);
+    if(!title || !category || !priority || !customer_id) return alert("Completa todos los campos");
+
+    let res=await fetch("/api/tickets/",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({title, description, category, priority, customer_id})
+    });
+    if(res.ok){ 
+        alert("Ticket creado"); 
+        loadTickets(); 
+        loadAlerts(); 
+    } else { 
+        alert(await res.text()); 
+    }
+}
+
+// Crear Alerta
+async function createAlert(){
+    let message=document.getElementById("alertMessage").value;
+    let customer_id=parseInt(document.getElementById("alertCustomer").value);
+    let type=document.getElementById("alertType").value;
+    if(!message || !customer_id) return alert("Completa todos los campos");
+
+    // Para backend correcto: necesitas un ticket_id. Aquí asumimos un ticket reciente del cliente:
+    let ticketRes = await fetch(`/api/tickets/?customer_id=${customer_id}`);
+    let tickets = await ticketRes.json();
+    let ticket_id = tickets.length>0 ? tickets[0].id : null;
+    if(!ticket_id) return alert("El cliente no tiene tickets para asociar la alerta");
+
+    let res=await fetch("/api/alerts/",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({message, ticket_id, level: type})
+    });
+
+    if(res.ok){
+        alert("Alerta creada");
+        loadAlerts();
+    }else{
+        alert(await res.text());
+    }
+}
+</script>
+
+</body>
+</html>
